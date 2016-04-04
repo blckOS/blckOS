@@ -1,80 +1,104 @@
-from Tkinter import *
+# Structure from pygame lecture by Lukas Peraza
 
-####################################
-# customize these functions
-####################################
+import pygame
+from App import*
 
-def init(data):
-    # load data.xyz as appropriate
-    pass
+class PygameGame(object):
 
-def mousePressed(event, data):
-    pass
+    def init(self):
+        ToDo = App(x = 0, 
+            y = 0,color1 = (255,255,255))#,
+            #color2 = (0,0,0))
+        self.apps = [ToDo]
 
-def keyPressed(event, data):
-    # use event.char and event.keysym
-    pass
+    def mousePressed(self, x, y):
+        print ("down")
+        for app in self.apps:
+            if app.isInBounds(x,y):
+                app.isClicked()
 
-def timerFired(data):
-    pass
+    def mouseReleased(self, x, y):
+        for app in self.apps:
+            if (app.isSelected):
+                app.isClicked()
+        pass
 
-def redrawAll(canvas, data):
-    drawDesktop(canvas,data)
-    pass
+    def mouseMotion(self, x, y):
+        pass
 
-def drawDesktop(canvas,data):
-    canvas.create_rectangle(0,0,data.width+100,data.height+100,fill = "black")
+    def mouseDrag(self, x, y):
+        pass
 
-####################################
-# use the run function as-is
-####################################
+    def keyPressed(self, keyCode, modifier):
+        pass
 
-def run(width=300, height=300):
-    def redrawAllWrapper(canvas, data):
-        canvas.delete(ALL)
-        redrawAll(canvas, data)
-        canvas.update()    
+    def keyReleased(self, keyCode, modifier):
+        pass
 
-    def mousePressedWrapper(event, canvas, data):
-        mousePressed(event, data)
-        redrawAllWrapper(canvas, data)
+    def timerFired(self, dt):
+        pass
 
-    def keyPressedWrapper(event, canvas, data):
-        keyPressed(event, data)
-        redrawAllWrapper(canvas, data)
+    def redrawAll(self, screen):
+        for app in self.apps:
+            app.drawApp(screen)
+            app.isDragging(screen)
 
-    def timerFiredWrapper(canvas, data):
-        timerFired(data)
-        redrawAllWrapper(canvas, data)
-        # pause, then call timerFired again
-        canvas.after(data.timerDelay, timerFiredWrapper, canvas, data)
+    def isKeyPressed(self, key):
+        ''' return whether a specific key is being held '''
+        return self._keys.get(key, False)
 
-    # Set up data and call init
-    class Struct(object): pass
-    data = Struct()
-    data.width = width
-    data.height = height
-    data.timerDelay = 100 # milliseconds
-    init(data)
-    # create the root and the canvas
-    root = Tk()
-    
-    #########Full Screen code TravisJoe at https://gist.github.com/TravisJoe/5576258#########
-    root.overrideredirect(True)
-    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
-    root.focus_set()
-    #########################################################################################
+    def __init__(self, width=800, height=600, fps=60, title="blckOS"):
+        self.width = width
+        self.height = height
+        self.fps = fps
+        self.title = title
+        self.bgColor = (0, 0, 0)
+        pygame.init()
 
-    canvas = Canvas(root, width=data.width, height=data.height)
-    canvas.pack()
-    # set up events
-    root.bind("<Button-1>", lambda event:
-                            mousePressedWrapper(event, canvas, data))
-    root.bind("<Key>", lambda event:
-                            keyPressedWrapper(event, canvas, data))
-    timerFiredWrapper(canvas, data)
-    # and launch the app
-    root.mainloop()  # blocks until window is closed
-    print("bye!")
+    def run(self):
 
-run(1440, 900)
+        clock = pygame.time.Clock()
+        screen = pygame.display.set_mode((self.width, self.height))
+        # set the title of the window
+        pygame.display.set_caption(self.title)
+
+        # stores all the keys currently being held down
+        self._keys = dict()
+
+        # call game-specific initialization
+        self.init()
+        playing = True
+        while playing:
+            time = clock.tick(self.fps)
+            self.timerFired(time)
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.mousePressed(*(event.pos))
+                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    self.mouseReleased(*(event.pos))
+                elif (event.type == pygame.MOUSEMOTION and
+                      event.buttons == (0, 0, 0)):
+                    self.mouseMotion(*(event.pos))
+                elif (event.type == pygame.MOUSEMOTION and
+                      event.buttons[0] == 1):
+                    self.mouseDrag(*(event.pos))
+                elif event.type == pygame.KEYDOWN:
+                    self._keys[event.key] = True
+                    self.keyPressed(event.key, event.mod)
+                elif event.type == pygame.KEYUP:
+                    self._keys[event.key] = False
+                    self.keyReleased(event.key, event.mod)
+                elif event.type == pygame.QUIT:
+                    playing = False
+            screen.fill(self.bgColor)
+            self.redrawAll(screen)
+            pygame.display.flip()
+
+        pygame.quit()
+
+def main():
+    game = PygameGame()
+    game.run()
+
+if __name__ == '__main__':
+    main()
