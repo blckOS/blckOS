@@ -1,18 +1,30 @@
 # Structure from pygame lecture by Lukas Peraza
 
+#Custom
 import pygame
-from App import*
+from app import*
+from button import*
+from cursor import*
+
+#Other
+from pygame.locals import*
+import os
+import numpy
 
 class PygameGame(object):
 
     def init(self):
-        ToDo = App(x = 0, 
-            y = 0,color1 = (255,255,255))#,
-            #color2 = (0,0,0))
+        ToDo = app(x = 0, 
+            y = 0,color1 = (255,255,255),
+            color2 = (0,0,0))
+
+        self.test = button(height = 50, width=50,text="To Do")
+        ToDo.addSubLayer(self.test)
         self.apps = [ToDo]
 
+        self.cursor = pygame.image.load("cursor.png").convert_alpha()
+
     def mousePressed(self, x, y):
-        print ("down")
         for app in self.apps:
             if app.isInBounds(x,y):
                 app.isClicked()
@@ -21,7 +33,6 @@ class PygameGame(object):
         for app in self.apps:
             if (app.isSelected):
                 app.isClicked()
-        pass
 
     def mouseMotion(self, x, y):
         pass
@@ -40,8 +51,10 @@ class PygameGame(object):
 
     def redrawAll(self, screen):
         for app in self.apps:
-            app.drawApp(screen)
+            app.make(screen)
             app.isDragging(screen)
+        
+        drawCursor(screen,self.cursor,pygame.mouse.get_pos(),50,50)
 
     def isKeyPressed(self, key):
         ''' return whether a specific key is being held '''
@@ -56,11 +69,12 @@ class PygameGame(object):
         pygame.init()
 
     def run(self):
-
         clock = pygame.time.Clock()
         screen = pygame.display.set_mode((self.width, self.height))
         # set the title of the window
         pygame.display.set_caption(self.title)
+
+        pygame.mouse.set_visible(False)
 
         # stores all the keys currently being held down
         self._keys = dict()
