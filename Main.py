@@ -1,28 +1,31 @@
 # Structure from pygame lecture by Lukas Peraza
 
-#Custom
 import pygame
+import pygame.freetype
+
+#Custom
 from app import*
 from button import*
-from cursor import*
+from image import*
+#from animation import*
+from textbox import*
 
 #Other
-from pygame.locals import*
+#from pygame.locals import*
 import os
 import numpy
+import string
 
 class PygameGame(object):
 
     def init(self):
         ToDo = app(x = 0, 
-            y = 0,color1 = (255,255,255),
-            color2 = (0,0,0))
+            y = 0,color1=(255,164,31)) #,color2=(255,88,46))
+        Weather = app(x=20,y=20,color1=(47,202,250),
+            title = "CMU")
+        self.apps = [ToDo,Weather]
 
-        self.test = button(height = 50, width=50,text="To Do")
-        ToDo.addSubLayer(self.test)
-        self.apps = [ToDo]
-
-        self.cursor = pygame.image.load("cursor.png").convert_alpha()
+        self.cursor = pygame.image.load("images/cursor.png").convert_alpha()
 
     def mousePressed(self, x, y):
         for app in self.apps:
@@ -54,7 +57,7 @@ class PygameGame(object):
             app.make(screen)
             app.isDragging(screen)
         
-        drawCursor(screen,self.cursor,pygame.mouse.get_pos(),50,50)
+        drawImage(screen,self.cursor,pygame.mouse.get_pos(),50,50,cursor=True)
 
     def isKeyPressed(self, key):
         ''' return whether a specific key is being held '''

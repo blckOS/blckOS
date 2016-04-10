@@ -50,7 +50,7 @@ class layer(object):
         if (len(self.subLayerList) == 0):
             self.subLayerList = subLayerList
         else:
-            self.subLayerList.append(subLayerList)
+            self.subLayerList.extend(subLayerList)
 
     #You can simply add one single layer otherwise
     def addSubLayer(self,subLayer):
@@ -87,6 +87,7 @@ class layer(object):
         if (len(self.subLayerList) != 0):
             for subLayer in self.subLayerList: 
                 subLayer.make(Surface, x=self.x, y=self.y)
+
     @staticmethod
     def drawGradient(self,Surface,x=0,y=0):
         x1,y1 = self.x + x, self.y + y
