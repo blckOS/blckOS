@@ -1,9 +1,10 @@
 import pygame
-
+from shapes import*
 class layer(object):
+    allLayers = []
     #Adding a color 2 will define a gradient
-    def __init__(self,width=300,height=400,x=0,y=0,color1="blue",
-        color2=None,blur=0):
+    def __init__(self,width=300,height=533,x=0,y=0,color1="blue",
+        color2=None,radius=0,blur=0):
         self.width = width
         self.height = height
         self.color1 = color1
@@ -12,6 +13,8 @@ class layer(object):
         self.y = y
         self.subLayerList = []
         self.blur = blur
+        self.radius = radius
+        layer.allLayers.append(self)
 
     #Tests if a given (x,y) is in the rectangular
     #boundary of the layer
@@ -111,16 +114,23 @@ class layer(object):
             p1 = (x1, y1+index)
             p2 = (x2, y1+index)
 
-            pygame.draw.line(Surface, color, p1, p2, 1)
+            pygame.draw.line(Surface,color,p1,p2,1)
             index+=1
 
     #Draws the layer
     def make(self,Surface,x=0,y=0):
         #If it is a gradient
         if (self.color2 != None):
-            self.drawGradient(self,Surface,x,y)
+            self.drawGradient(self,Surface,self.x+x,self.y+y)
         else:
             frame = pygame.Rect(self.x+x,self.y+y, 
-                self.width, self.height)
-            pygame.draw.rect(Surface, self.color1, frame)
+                self.width,self.height)
+
+            # frame = pygame.Surface((self.width,self.height), pygame.SRCALPHA)
+            # frame.fill(self.color1)
+            # Surface.blit(frame, (self.x+x,self.y+y))
+
+            roundedRectangle(Surface,frame,self.color1,radius=0.05)
+            #pygame.draw.rect(Surface, self.color1, frame)
+
         self.drawSubLayers(Surface)

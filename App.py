@@ -7,7 +7,7 @@ import os
 class app(layer):
     #openApps = []
 
-    def __init__(self, width=250, height=444, x=0, y=0, color1="blue", color2=None,
+    def __init__(self, width=300, height=533, x=0, y=0, color1="blue", color2=None,
         title="TO DO",mainColor=(255,255,255)):
         super().__init__(width,height,x,y,color1,color2)
         self.isSelected = False
@@ -20,7 +20,7 @@ class app(layer):
         else:
             image = pygame.image.load("images/doneBlack.png").convert_alpha()
         
-        closeButton = button(width=17,height=12,x=0.05*self.height,
+        closeButton = button(width=24,height=17,x=0.05*self.height,
             y=0.05*self.height,image=image)
 
         title = label(text=self.title,fontSize=16,color=mainColor)
@@ -35,7 +35,7 @@ class app(layer):
     
     #If the app is dragging we calculate the offset
     #of the mouse click, and update its position
-    def isDragging(self,surface):
+    def isDragging(self):
         if (self.isSelected):
             x1,y1 = self.initialClick
             x,y = pygame.mouse.get_pos()
