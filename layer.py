@@ -1,10 +1,19 @@
 import pygame
 from shapes import*
 class layer(object):
+    #Layers handle the drawing of their sublayers
+    #so we do need to keep track of what is a 
+    #subLayer to avoid drawing it.
+
+    #Layers are drawn globally for elegant
+    #z-index tracking and implementation
+
     allLayers = []
+    allSubLayers = []
+
     #Adding a color 2 will define a gradient
     def __init__(self,width=300,height=533,x=0,y=0,color1="blue",
-        color2=None,radius=0,blur=0):
+        color2=None,radius=0,blur=0,isSublayer=False,isBackground=False):
         self.width = width
         self.height = height
         self.color1 = color1
@@ -14,7 +23,15 @@ class layer(object):
         self.subLayerList = []
         self.blur = blur
         self.radius = radius
-        layer.allLayers.append(self)
+        self.isSublayer = isSublayer
+
+        self.mousePosition = pygame.mouse.get_pos()
+
+        if (self.isSublayer == False):
+            layer.allLayers.insert(0, self)
+        else:
+            layer.allSubLayers.append(self)
+        
 
     #Tests if a given (x,y) is in the rectangular
     #boundary of the layer
@@ -29,7 +46,6 @@ class layer(object):
     #layer's subLayers. In the case of an
     #app we want buttons, not the app to 
     #recognize clicks
-    @staticmethod
     def isInSubLayer(self,x,y):
         if (len(self.subLayerList) == 0): 
             return False
@@ -43,11 +59,56 @@ class layer(object):
     #of its sublayers
     def isInBounds(self,x,y):
         if (self.isInRect(x,y)
-        and not self.isInSubLayer(self,x,y)):
+        and not self.isInSubLayer(x,y)):
             return True
         else:
             return False
-    
+   
+    def mouseOver(self):
+        pass
+
+    def mousePress(self):
+        pass
+
+    def mouseReleased(self):
+        pass
+
+    def mouseMotion(self):
+        pass
+
+    def mouseDrag(self):
+        pass
+
+    @classmethod
+    def handleEvent(layerClass,event):
+        x,y = pygame.mouse.get_pos()
+
+        def handleEventLayer(targetLayer,event,x,y):
+            #Tests a event and calls one of the defined methods
+            #these methods can/will be overidden in instances of layer
+            if (targetLayer.isInBounds(x,y)):
+                if (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1):
+                    print(targetLayer)
+                    targetLayer.mousePress()
+                elif (event.type == pygame.MOUSEBUTTONUP and event.button == 1):
+                    targetLayer.mouseReleased()
+                elif (event.type == pygame.MOUSEMOTION and
+                      event.buttons == (0, 0, 0)):
+                    targetLayer.mouseMotion()
+                elif (event.type == pygame.MOUSEMOTION and
+                      event.buttons[0] == 1):
+                    targetLayer.mouseDrag()
+                return True
+
+        for subLayer in layerClass.allSubLayers:
+            if(handleEventLayer(targetLayer=subLayer,event=event,x=x,y=y)):
+                return 0
+
+        for layers in layerClass.allLayers:
+            if (handleEventLayer(targetLayer=layers,event=event,x=x,y=y)):
+                return 0 #When a top layer has an event we don't want
+                         #to check the layers below it.
+
     #You can give a layer a list of sublayers
     def subLayers(self, subLayerList):
         if (len(self.subLayerList) == 0):
@@ -64,8 +125,8 @@ class layer(object):
     @staticmethod  
     def lerpColors(color1,color2,t):
 
-        #Algorithm from Wikipedia Article on Linear interpolation
-        #Plain linear interpolation algorith
+        #Plain linear interpolation algorithm
+        #read about in Wikipedia Article on Linear interpolation
         lerp = lambda v0,v1,t: (1-t)*v0 + t*v1
 
         r1,g1,b1 = color1
@@ -91,10 +152,9 @@ class layer(object):
             for subLayer in self.subLayerList: 
                 subLayer.make(Surface, x=self.x, y=self.y)
 
-    @staticmethod
     def drawGradient(self,Surface,x=0,y=0):
-        x1,y1 = self.x + x, self.y + y
-        x2,y2 = self.x + self.width + x, self.y + self.height + y
+        x1,y1 = self.x, self.y
+        x2,y2 = self.x + self.width, self.y + self.height
 
         #A is the interval between the y-coordinate of the top corner
         #and the y-coordinate of the bottom corner
@@ -121,16 +181,11 @@ class layer(object):
     def make(self,Surface,x=0,y=0):
         #If it is a gradient
         if (self.color2 != None):
-            self.drawGradient(self,Surface,self.x+x,self.y+y)
+            self.drawGradient(Surface,self.x,self.y)
         else:
             frame = pygame.Rect(self.x+x,self.y+y, 
                 self.width,self.height)
 
-            # frame = pygame.Surface((self.width,self.height), pygame.SRCALPHA)
-            # frame.fill(self.color1)
-            # Surface.blit(frame, (self.x+x,self.y+y))
-
             roundedRectangle(Surface,frame,self.color1,radius=0.05)
-            #pygame.draw.rect(Surface, self.color1, frame)
 
         self.drawSubLayers(Surface)

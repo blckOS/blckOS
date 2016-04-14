@@ -1,88 +1,148 @@
-import sys, os
 import pygame
-from pygame.locals import *
+from gooeyParticles import Box
+from slider import Slider
 
-try:
-    import pygame.freetype as freetype
-except ImportError:
-    print ("No FreeType support compiled")
-    sys.exit ()
+"""
+NOTE: Double tap keys for best usage
+Controls:
+a = animate mode
+   Mouse: interact with points
+   Click on sliders: change constants
+   Top Slider: Attraction/repulsion to mouse
+   Middle Slider: Spring constant
+   Bottom Slider: Velocity dampening
+d = draw mode
+   Mouse: Click and hold to draw points
+r = reset all points (sends you to animate mode)
+c = clear (delete) all points (sends you to draw mode)
+"""
 
-colors = {
-    "grey_light"    :   pygame.Color(200, 200, 200),
-    "grey_dark"     :   pygame.Color(100, 100, 100),
-    "green"         :   pygame.Color(50, 255, 63),
-    "red"           :   pygame.Color(220, 30, 30),
-    "blue"          :   pygame.Color(50, 75, 245)
-}
+class App:
+    def __init__(self,size = (600,400),color = (255,255,255)):
+        self.particle_size = 10
+        self.running = True
+        self.size = self.width, self.height = size
+        self.window = pygame.display.set_mode(self.size)
+        self.screen = pygame.display.get_surface()
+        self.buttons = []
+        self.color_sliders = []
+        self.color = color
+        self.sliders = []
 
-def run():
-    pygame.init()
+        pygame.init()
+        self.screen.fill(self.color)
+        self.init_sliders()
+        pygame.display.flip()
 
-    fontdir = os.path.dirname(os.path.abspath (__file__))
-    face = freetype.Font(os.path.join (fontdir, "data", "sans.ttf"))
+    def main(self):
+        while self.running:
+            event = pygame.event.poll()
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_a:
+                    self.goo_loop()
+                if event.key == pygame.K_d:
+                    self.draw_loop()
+                if event.key == pygame.K_c:
+                    self.buttons = []
+                    self.screen.fill(self.color)
+                    self.draw_loop()
+                if event.key == pygame.K_r:
+                    for b in self.buttons:
+                        b.accel = [0,0]
+                        b.vel = [0,0]
+                        b.rect.center = b.center
+                        b.pos = b.center
+                    self.screen.fill(self.color)
+                    self.goo_loop()
+    def draw_loop(self):
+        color = [0,150,0]
+        running = True
+        clock = pygame.time.Clock()
+        for b in self.buttons:
+            b.draw(self.screen)
+        for s in self.color_sliders:
+            s.draw(self.screen)
+            
+        pygame.display.flip()
+        while running:
+            event = pygame.event.poll()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse = pygame.mouse.get_pos()
+                skip = False
+                for i in range(len(self.color_sliders)):
+                    if self.color_sliders[i].update(mouse):
+                        color[i] = self.color_sliders[i].get()
+                        skip = True
+                if skip:
+                    self.screen.fill(self.color)
+                    for s in self.color_sliders:
+                        s.draw(self.screen)
+                    for b in self.buttons:
+                        b.draw(self.screen)
+                    pygame.display.flip()
+                if not skip:
+                    previous = (-1,-1)
+                    while  event.type != pygame.MOUSEBUTTONUP:
+                        mouse = pygame.mouse.get_pos()
+                        if mouse != previous:
+                            self.buttons.append(Box(self.particle_size,(mouse),color))
+                            self.buttons[-1].draw(self.screen)
+                            pygame.display.flip()
+                        previous = pygame.mouse.get_pos()
+                        event = pygame.event.poll()
+            if pygame.event.peek(pygame.QUIT):
+                running = False
+                self.running = False
+            if pygame.event.peek(pygame.KEYDOWN):
+                running = False
+        self.main()
 
-    screen = pygame.display.set_mode((800, 600))
-    screen.fill (colors["grey_light"])
+    def goo_loop(self):
+        running = True
+        clock = pygame.time.Clock()
+        while running:
+            pygame.mouse.get_rel()
+            clock.tick(20)
+            state = False
+            if pygame.event.peek(pygame.MOUSEMOTION):
+                state = True
+            if pygame.event.peek(pygame.QUIT):
+                running = False
+            if len(self.buttons) == 0:
+                running = False
+            mouse = pygame.mouse.get_pos()
+            for b in self.buttons:
+                event = pygame.event.poll()
+                if event.type == pygame.KEYDOWN:
+                    running = False
+                if event.type == pygame.QUIT:
+                    self.running = False
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    for s in self.sliders:
+                        s.update(mouse)
+                b.grav_state = state
+                b.update_const(self.sliders)
+                b.update(mouse,self.size)
 
-    face.underline_adjustment = 0.5
-    face.pad = True
-    face.render_to(screen, (32, 32), "Hello World", colors["red"],
-                   colors['grey_dark'], ptsize=64,
-                   style=freetype.STYLE_UNDERLINE|freetype.STYLE_OBLIQUE)
-    face.pad = False
+            for b in self.buttons:
+                b.draw(self.screen)
+            for s in self.sliders:
+                s.draw(self.screen)
+            pygame.display.flip()
+            self.screen.fill(self.color)
+        self.main()
 
-    face.render_to(screen, (32, 128), "abcdefghijklm", colors["grey_dark"],
-                   colors["green"], ptsize=64)
+    #initializes sliders for drawGooey
+    def init_sliders(self):
+        self.sliders.append(Slider(-5000,(-10000,5000),'g',(0,5),"Gravity"))       
+        self.sliders.append(Slider(.1,(-1.0,1.0),'k',(0,35),"Spring"))
+        self.sliders.append(Slider(.6,(0,1.0),'d',(0,65),"Dampening"))
 
-    face.vertical = True
-    face.render_to(screen, (32, 200), "Vertical?", colors["blue"],
-                   None, ptsize=32)
-    face.vertical = False
-
-    face.render_to(screen, (64, 190), "Let's spin!", colors["red"],
-                   None, ptsize=48, rotation=55)
-
-    face.render_to(screen, (160, 290), "All around!", colors["green"],
-                   None, ptsize=48, rotation=-55)
-
-    face.render_to(screen, (250, 220), "and BLEND",
-                   pygame.Color(255, 0, 0, 128), None, ptsize=64)
-
-    face.render_to(screen, (265, 237), "or BLAND!",
-                   pygame.Color(0, 0xCC, 28, 128), None, ptsize=64)
-
-    # Some pinwheels
-    face.origin = True
-    for angle in range(0, 360, 45):
-        face.render_to(screen, (200, 500), ")", pygame.Color('black'),
-                       ptsize=48, rotation=angle)
-    face.vertical = True
-    for angle in range(15, 375, 30):
-        face.render_to(screen, (600, 400), "|^*", pygame.Color('orange'),
-                       ptsize=48, rotation=angle)
-    face.vertical = False
-    face.origin = False
-
-    utext = pygame.compat.as_unicode(r"I \u2665 Unicode")
-    face.render_to(screen, (298, 320), utext, pygame.Color(0, 0xCC, 0xDD),
-                   None, ptsize=64)
-
-    utext = pygame.compat.as_unicode(r"\u2665")
-    face.render_to(screen, (480, 32), utext, colors["grey_light"],
-                   colors["red"], ptsize=148)
-
-    face.render_to(screen, (380, 380), "...yes, this is an SDL surface",
-                   pygame.Color(0, 0, 0),
-                   None, ptsize=24, style=freetype.STYLE_STRONG)
-
-    pygame.display.flip()
-
-    while 1:
-        if pygame.event.wait().type in (QUIT, KEYDOWN, MOUSEBUTTONDOWN):
-            break
-
-    pygame.quit()
-
-if __name__ == "__main__":
-    run ()
+        self.color_sliders.append(Slider(150,(0,255),'red',(0,5),"red",(100,10),(255,0,0)))       
+        self.color_sliders.append(Slider(150,(0,255),'green',(0,35),"green",(100,10), (0,255,0)))       
+        self.color_sliders.append(Slider(150,(0,255),'blue',(0,65),"blue",(100,10), (0,0,255)))       
+a = App((600,400),(200,200,200))
+a.draw_loop()

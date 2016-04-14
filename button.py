@@ -8,25 +8,22 @@ class button(layer):
 
     def __init__(self,width=50,height=50,x=0,y=0,color1=(0,0,255),
         color2=None,text="",font="Din Round Pro Bold",fontSize=15,
-        textColor=(255,255,255),image=None):
+        textColor=(255,255,255),image=None,isSublayer=False,scale=3):
 
-        super().__init__(width,height,x,y,color1,color2)
+        super().__init__(width=width,height=height,x=x,y=y,color1=color1,
+            color2=color2,isSublayer=isSublayer)
 
         self.fontSize = fontSize
         pygame.freetype.set_default_resolution(300)
         self.font = pygame.freetype.SysFont(font, fontSize)
         self.text = text
         self.textColor = textColor
-        self.action = lambda: 0
         self.image = image
-
-    def addAction(self,function):
-        self.action = funtion
+        self.scale = scale
 
     def isInBounds(self,x,y):
         if (self.isInRect(x,y)):
             return True
-            self.action()
         else:
             return False
 
@@ -35,8 +32,10 @@ class button(layer):
             pos = (self.x+x,self.y+y)
             back = pygame.Rect(self.x+x,self.y+y, self.width, self.height)
             pygame.draw.rect(Surface, self.color1, back)
-            label = self.font.pygame.freetype.Font.render_to(self.text, 100, self.textColor)
-            Surface.blit(label, pos)
+
+            self.font.render_to(Surface, pos, self.text, fgcolor=self.textColor,
+            size=self.fontSize/self.scale)
+
         else:
             pos = (self.x,self.y)
             drawImage(Surface,self.image,pos,width=self.width,
